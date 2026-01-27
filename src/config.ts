@@ -292,6 +292,7 @@ export function defineVitestConfig(config: ViteUserConfig & { test?: VitestConfi
         test: {
           name: defaultEnvironment,
           environment: defaultEnvironment,
+          include: resolvedConfig.test.include,
           exclude: [
             '**/node_modules/**',
             '**/dist/**',
@@ -303,6 +304,9 @@ export function defineVitestConfig(config: ViteUserConfig & { test?: VitestConfi
           ],
         },
       })
+
+      delete resolvedConfig.test.environment
+      delete resolvedConfig.test.include
     }
 
     return resolvedConfig
