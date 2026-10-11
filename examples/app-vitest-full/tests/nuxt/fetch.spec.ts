@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { mountSuspended, registerEndpoint } from '@nuxt/test-utils/runtime'
 
 import { listen } from 'listhen'
-import { createApp, eventHandler, toNodeListener, readBody, getHeaders, getQuery, setCookie } from 'h3'
+import { createApp, eventHandler, toNodeListener, readBody, getHeaders, getQuery, setCookie, readFormData, readMultipartFormData } from 'h3'
 
 import FetchComponent from '~/components/FetchComponent.vue'
 
@@ -188,6 +188,49 @@ describe('server mocks and data fetching', () => {
 
     expect(await $fetch<unknown>(request, { method: 'POST', body: [1] })).toMatchObject({ title: 'with-request', data: [1] })
     expect(await fetch(request, { method: 'POST', body: '[1]' }).then(res => res.json())).toMatchObject({ title: 'with-request', data: [1] })
+  })
+
+  it('can mock fetch requests with FormData', async () => {
+    registerEndpoint('/with-form-data', {
+      method: 'POST',
+      handler: event => readFormData(event).then(form => [...form.entries()]),
+    })
+
+    const createBody = () => {
+      const form = new FormData()
+      form.append('Name', 'Nuxt')
+      form.append('Message', 'Hello')
+      return form
+    }
+    const expected = [['Name', 'Nuxt'], ['Message', 'Hello']]
+
+    expect(await $fetch('/with-form-data', { method: 'post', body: createBody() })).toEqual(expected)
+    expect(await fetch('/with-form-data', { method: 'post', body: createBody() }).then(res => res.json())).toEqual(expected)
+  })
+
+  it('can mock fetch requests with FormData with files', async () => {
+    registerEndpoint('/with-form-data-with-file', {
+      method: 'POST',
+      handler: event => readMultipartFormData(event).then(
+        parts => parts?.map(part => ({ ...part, data: part.data.toString('utf8') })) ?? []),
+    })
+
+    const createBody = () => {
+      const form = new FormData()
+      form.append('meta', 'this is meta data')
+      form.append('file', new File([Buffer.from('this is file 1', 'utf8')], 'hello1.txt', { type: 'text/plain' }))
+      form.append('file', new File([Buffer.from('this is file 2', 'utf8')], 'hello2.txt', { type: 'text/plain' }))
+      return form
+    }
+
+    const expected = [
+      { name: 'meta', data: 'this is meta data' },
+      { name: 'file', type: 'text/plain', filename: 'hello1.txt', data: 'this is file 1' },
+      { name: 'file', type: 'text/plain', filename: 'hello2.txt', data: 'this is file 2' },
+    ]
+
+    expect(await $fetch('/with-form-data-with-file', { method: 'post', body: createBody() })).toMatchObject(expected)
+    expect(await fetch('/with-form-data-with-file', { method: 'post', body: createBody() }).then(r => r.json())).toMatchObject(expected)
   })
 
   it('can mock fetch requests with URL', async () => {
