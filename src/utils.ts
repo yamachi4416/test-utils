@@ -206,13 +206,8 @@ export function resolveH3Package(rootDir: string, appDir: string, modulesDir: st
     }
   }
 
-  let h3Info: ReturnType<typeof getPackageInfo>
-  for (const dir of [rootDir, ...nitroPath ? [dirname(nitroPath)] : modulesDir]) {
-    h3Info = getPackageInfo('h3', dir) || h3Info
-    if (h3Info?.version?.startsWith('2.')) {
-      break
-    }
-  }
+  const h3Info = getPackageInfo('h3', nitroPath ? dirname(nitroPath) : modulesDir)
+    || getPackageInfo('h3', rootDir)
 
   if (!h3Info) {
     return
