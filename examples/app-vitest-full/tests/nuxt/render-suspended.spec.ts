@@ -432,6 +432,16 @@ it('can spy component setup state via setupState', async () => {
   expect(wrapper.setupState.input.value).toBe(400)
 })
 
+it('can direct mock component setup state', async () => {
+  const wrapper = await renderSuspended(CustomRandom, {
+    spy: setupState => ({ ...setupState, random: vi.fn() }),
+  })
+
+  await fireEvent.click(wrapper.getByRole('button', { name: 'Random' }))
+
+  expect(wrapper.setupState.random).toHaveBeenCalled()
+})
+
 it('can spy component exposed via setupState', async () => {
   const wrapper = await renderSuspended(CustomRandom, {
     spy: true,

@@ -699,6 +699,16 @@ describe('watcher cleanup validation', () => {
     expect(wrapper.setupState.input.value).toBe(400)
   })
 
+  it('can direct mock component setup state', async () => {
+    const wrapper = await mountSuspended(CustomRandom, {
+      spy: setupState => ({ ...setupState, random: vi.fn() }),
+    })
+
+    await wrapper.find('#random').trigger('click')
+
+    expect(wrapper.setupState.random).toHaveBeenCalled()
+  })
+
   it('can spy component exposed via setupState', async () => {
     const wrapper = await mountSuspended(CustomRandom, {
       spy: true,

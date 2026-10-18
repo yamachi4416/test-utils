@@ -10,6 +10,8 @@ import type { render as _render } from '@testing-library/vue'
 import type { render } from '@nuxt/test-utils/browser'
 import type { mountSuspended, renderSuspended } from '@nuxt/test-utils/runtime'
 
+import type { SetupState } from '../../src/runtime-utils/utils/suspended'
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Component = defineComponent({
   props: {
@@ -40,7 +42,7 @@ const Component = defineComponent({
 
 type SuspendedAdditionalOptions = {
   route?: RouteLocationRaw | false
-  spy?: boolean
+  spy?: boolean | ((setupState: SetupState) => SetupState)
   scoped?: boolean
 }
 

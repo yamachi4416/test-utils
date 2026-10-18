@@ -43,7 +43,8 @@ export type WrapperSuspendedAdditionalOptions = {
    */
   route?: RouteLocationRaw | false
   /**
-   * Enable spy component setup state.
+   * Allow spying on functions called within the template or render function.
+   * To enable this, pass `true` or override `setupState` with mock functions.
    * @default false
    * @example
    * ```ts
@@ -52,8 +53,16 @@ export type WrapperSuspendedAdditionalOptions = {
    * await wrapper.find('#random').trigger('click')
    * expect(wrapper.setupState.getRandom).toHaveBeenCalled()
    * ```
+   * @example
+   * ```
+   * const wrapper = await mountSuspended(CustomRandom, {
+   *  spy: setupState => ({ ...setupState, getRandom: vi.fn(() => 200) })
+   * })
+   * await wrapper.find('#random').trigger('click')
+   * expect(wrapper.setupState.getRandom).toHaveBeenCalled()
+   * ```
    */
-  spy?: boolean
+  spy?: boolean | ((setupState: SetupState) => SetupState)
   scoped?: boolean
 }
 
@@ -139,8 +148,8 @@ export function wrapperSuspended<
     }
   }
 
-  const { props = {}, attrs = {} } = options as ComponentMountingOptions<C>
-  const { route = '/', scoped = false, spy = false, ...wrapperFnOptions } = options as ComponentMountingOptions<C>
+  const { route = '/', scoped = false, spy = false, ...wrapperFnOptions } = options as ComponentMountingOptions<C> & WrapperSuspendedAdditionalOptions
+  const { props = {}, attrs = {} } = wrapperFnOptions
 
   const {
     render: componentRender,
@@ -188,7 +197,9 @@ export function wrapperSuspended<
 
       if (result && typeof result === 'object') {
         if (spy) {
-          result = vi.mockObject(result, { spy: true })
+          result = spy === true
+            ? vi.mockObject(result, { spy: true })
+            : spy(result)
         }
         setupState = result
       }
